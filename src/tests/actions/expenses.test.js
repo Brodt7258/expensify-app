@@ -1,6 +1,6 @@
 import configureMockStore from 'redux-mock-store';
 import thunk from 'redux-thunk';
-import { startAddExpense, addExpense, editExpense, removeExpense, setExpenses, startSetExpenses, startRemoveExpense } from '../../actions/expenses';
+import { startAddExpense, addExpense, editExpense, removeExpense, setExpenses, startSetExpenses, startRemoveExpense, startEditExpense } from '../../actions/expenses';
 import expenses from '../fixtures/expenses';
 import database from '../../firebase/firebase';
 
@@ -14,6 +14,7 @@ beforeEach((done) => {
   database.ref('expenses').set(expensesData).then(() => done());
 });
 
+//REMOVE
 test('should setup remove expense action object', () => {
   const action = removeExpense({ id: '123abc' });
   expect(action).toEqual({
@@ -38,6 +39,7 @@ test('should remove expense from firebase', (done) => {
   })
 });
 
+//EDIT
 test('should setup edit expense action object', () => {
   const action = editExpense('123abc', { note: 'this is a test' });
   expect(action).toEqual({
@@ -47,6 +49,25 @@ test('should setup edit expense action object', () => {
   });
 });
 
+test('should edit expense in database and store', (done) => {
+  const store = createMockStore({});
+  const id = expenses[0].id;
+  const updates = { note: 'startEditExpense test' };
+  store.dispatch(startEditExpense(id, updates)).then(() => {
+    const actions = store.getActions();
+    expect(actions[0]).toEqual({
+      type: 'EDIT_EXPENSE',
+      id,
+      updates
+    });
+    return database.ref(`expenses/${id}`).once('value');
+  }).then((snapshot) => {
+    expect(snapshot.val().note).toEqual(updates.note);
+    done();
+  });
+});
+
+//ADD
 test('should setup add expense action object with provided values', () => {
   const action = addExpense(expenses[2]);
   expect(action).toEqual({
@@ -103,6 +124,7 @@ test('should add expense with defaults to database and store', (done) => {
   });
 });
 
+//SET
 test('should setup set expense object with data', () => {
   const action = setExpenses(expenses);
   expect(action).toEqual({
